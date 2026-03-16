@@ -7,11 +7,13 @@ description: 完整部署基於 OpenClaw 的 LINE Bot 服務。涵蓋 Docker 環
 
 將 OpenClaw AI 助理框架部署為可上線的 LINE Bot 服務，包含環境設定、Cloudflare 固定網址、多種回覆格式支援。
 
+**新手提示**：如果使用者是完全零基礎，建議先使用 `openclaw-course-guide` skill 完成帳號註冊與工具安裝（Step ①～④），再回到本 skill 的 Phase 2 開始部署。
+
 ---
 
 ## 快速總覽
 
-OpenClaw 是可自架的 AI 助理框架，核心能力是「通訊平台 + AI 模型 + 外掛」三層自由組合。本 skill 引導使用者從零到完成一個能在 LINE 上對話的 AI Bot。
+OpenClaw 是可自架的 AI 助理框架，核心能力是「通訊平台 + AI 模型 + 外掛」三層自由組合。本 skill 引導使用者從環境就緒到完成一個能在 LINE 上對話的 AI Bot。
 
 ### 架構圖
 
@@ -93,6 +95,8 @@ git clone <講師提供的 OpenClaw 專案網址>
 cd <專案資料夾名稱>
 ```
 
+agent 注意：如果使用者不知道專案網址，請詢問講師或課程提供的連結。切勿猜測。
+
 ### 設定 OpenRouter API Key
 
 編輯 Shell 設定檔（Mac: `~/.zshrc`、Windows Git Bash: `~/.bashrc`）：
@@ -102,6 +106,20 @@ export OPENROUTER_API_KEY='貼上你的 OpenRouter API Key'
 export ANTHROPIC_DEFAULT_SONNET_MODEL="openrouter/free"
 export ANTHROPIC_DEFAULT_OPUS_MODEL="openrouter/free"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="openrouter/free"
+
+# 備用：免費模型太慢時取消下行註解
+# export ANTHROPIC_DEFAULT_SONNET_MODEL="moonshotai/kimi-k2.5"
+```
+
+選配：防 429 自動重試函式（貼在設定檔最底部）：
+```bash
+orfree() {
+  for i in {1..5}; do
+    echo "第 $i 次嘗試..."
+    claude "$@" && break
+    sleep 3
+  done
+}
 ```
 
 讓設定生效：
@@ -112,11 +130,13 @@ source ~/.zshrc
 source ~/.bashrc
 ```
 
+驗證設定：`echo $OPENROUTER_API_KEY` 有輸出值即通過。
+
 ---
 
 ## Phase 2：啟動 OpenClaw 服務
 
-確認 Docker Desktop 已啟動（綠色圖示），且終端機在 OpenClaw 專案資料夾內。
+**關鍵前置條件**：確認 Docker Desktop 已啟動（圖示為綠色），且終端機在 OpenClaw 專案資料夾內。如果 Docker Desktop 沒開，所有 `docker compose` 指令都會報 `Cannot connect to the Docker daemon` 錯誤。
 
 ### 四行指令啟動
 
@@ -315,3 +335,9 @@ docker compose restart openclaw-gateway
 | `references/line-response-formats.md` | LINE 所有回覆格式規格、Flex Message 設計規範 |
 | `references/image-generation.md` | Gemini + matplotlib 圖片生成連續技 |
 | `references/troubleshooting.md` | 完整排錯指南（SSL、Webhook、API 錯誤） |
+
+## 相關 Skills
+
+| Skill | 用途 |
+|-------|------|
+| `openclaw-course-guide` | 零基礎新手從帳號註冊到工具安裝的課程導覽，完成後銜接本 skill |
