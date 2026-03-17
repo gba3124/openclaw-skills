@@ -1,11 +1,106 @@
 ---
 name: openclaw-course-guide
-description: 引導零基礎小白從一台空電腦開始，按課程順序完成帳號註冊、工具安裝、OpenClaw 架設、到 LINE Bot 上線的完整流程。當用戶提到「課程」、「從零開始」、「新手教學」、「小白安裝」、「第一次架 OpenClaw」、「按步驟裝」時使用此 skill。完成基礎建設後會銜接 openclaw-linebot-master skill 進入部署與進階功能。
+description: 互動式引導零基礎小白從一台空電腦開始，按課程順序完成帳號註冊、工具安裝、OpenClaw 架設、到 LINE Bot 上線。會一步一步問使用者進度，讓使用者選擇 Tunnel 類型。當用戶提到「課程」、「從零開始」、「新手教學」、「小白安裝」、「第一次架 OpenClaw」、「按步驟裝」時使用此 skill。
 ---
 
-# OpenClaw 課程導覽：從零到 LINE AI Bot
+# 🎯 OpenClaw 課程導覽：從零到 LINE AI Bot - 互動式版本
 
-依照「創聚 × OpenClaw：AI 原型開發夜」課程順序，帶完全沒經驗的使用者完成整條路線。
+歡迎！我會帶你從一台空電腦到有一個會說話的 LINE AI Bot。
+
+**在開始之前，讓我了解你的情況：**
+
+---
+
+## 📋 請告訴我你現在到哪一步？
+
+1. **我還沒做任何設定，完全從零開始** → 從頭帶你（帳號 → 工具 → 專案）
+2. **我已經有 GitHub、OpenRouter、 LINE Developers 等帳號** → 跳過帳號註冊
+3. **我已經安裝了 Git、Node.js、Docker** → 跳過工具安裝
+4. **我已經 clone 了 OpenClaw 專案** → 直接進入環境設定
+5. **OpenClaw 已經在運行了** → 直接進入 LINE Bot 部署
+
+---
+
+## 🧭 關於 Tunnel（網址）的選擇
+
+在完成 LINE Bot 部署之前，你需要決定要用哪種網址：
+
+| | **臨時網址 (Quick Tunnel)** | **固定網址 (固定 Tunnel)** |
+|---|---|---|
+| **網址** | 每次重開不同 | 永遠固定 |
+| **費用** | 免費 | 網域 $1-10/年 |
+| **設定時間** | 5 分鐘 | 15 分鐘 |
+| **重開機後** | 要重新設定 Webhook | 不用改 |
+| **適合** | 學習/測試 | 正式上線 |
+
+### 📌 重要提醒：臨時網址每次重開機會變！
+
+如果選擇臨時網址，每次重開電腦後：
+1. Tunnel 網址會變成新的
+2. 你需要去 LINE Developers 後台更新 Webhook URL
+3. 我會教你怎麼做
+
+**你要選哪一個？**
+- **A. 臨時網址** - 免費但每次重開要更新 LINE Webhook
+- **B. 固定網址** - 需要買網域（~$1/年），但永遠不用改
+
+---
+
+## 📅 每日開機後的例行事項（選擇臨時網址必看！）
+
+如果使用臨時網址，每次打開電腦後需要做以下事情：
+
+### 步驟：
+1. **確認 Docker Desktop 已啟動**（確認綠色圖示）
+2. **啟動 Quick Tunnel**：
+   ```bash
+   docker run -d --rm --network host cloudflare/cloudflared:latest tunnel --url http://localhost:8080
+   ```
+3. **取得新網址**：`docker logs $(docker ps -q --filter ancestor=cloudflare/cloudflared:latest) 2>&1 | grep trycloudflare`
+4. **更新 LINE Webhook**：
+   - 打開 https://developers.line.biz/console/
+   - 進入你的 Channel → Messaging API
+   - 更新 Webhook URL（記得加 `/webhook/line`）
+   - 按 Verify 確認
+
+### 記住的指令：
+```bash
+# 啟動 Tunnel
+docker run -d --rm --network host cloudflare/cloudflared:latest tunnel --url http://localhost:8080
+
+# 取得網址
+docker logs $(docker ps -q --filter ancestor=cloudflare/cloudflared:latest) 2>&1 | grep trycloudflare
+```
+
+---
+
+## 我們的流程
+
+```
+Step 1: 帳號註冊（如果還沒有的話）
+   ↓
+Step 2: 安裝工具（Git, Node.js, Docker）
+   ↓
+Step 3: 下載專案 + 安裝 Claude Code
+   ↓
+Step 4: 環境設定（API Key）
+   ↓
+Step 5: 啟動 OpenClaw 服務
+   ↓
+Step 6: LINE Bot 上線 ← 在這裡選擇 Tunnel 類型
+   ↓
+Step 7: （可選）升級固定 Tunnel
+```
+
+---
+
+## 開始吧！
+
+**請回复我：**
+1. 你現在到哪一步？（上面 1-5 的選項）
+2. 你想選臨時網址還是固定網址？（A 或 B）
+
+然後我會根據你的回答，一步一步帶你完成！
 
 ---
 

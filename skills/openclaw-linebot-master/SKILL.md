@@ -1,13 +1,96 @@
 ---
-name: openclaw-linebot-deploy
-description: 完整部署基於 OpenClaw 的 LINE Bot 服務。涵蓋 Docker 環境設定、LINE Developers Console 配置、Cloudflare Tunnel 固定網址、System Prompt 客製化、多種回覆格式（純文字、Flex Message、圖片）、圖片生成連續技、以及 Claude Code 協作開發。當用戶提到 OpenClaw、LINE Bot 部署、Cloudflare Tunnel、LINE 機器人架設、自架 AI 助理、或想把 OpenClaw 接上 LINE 時，請務必使用此 skill。也適用於已部署但需要排錯、升級回覆格式、或加入圖片生成功能的場景。
+name: openclaw-linebot-master
+description: 互動式引導完成 OpenClaw LINE Bot 部署。會一步一步問使用者目前的進度，讓使用者選擇要用「每次重開都會變的免費臨時網址」還是「固定不變的正式網址」，並清楚說明兩者差異。當用戶提到 OpenClaw 接 LINE、架 LINE Bot、部署 AI 助理、或需要排錯時使用此 skill。
 ---
 
-# OpenClaw LINE Bot 完整部署指南
+# 🎯 OpenClaw LINE Bot 部署 - 互動式引導
 
-將 OpenClaw AI 助理框架部署為可上線的 LINE Bot 服務，包含環境設定、Cloudflare 固定網址、多種回覆格式支援。
+歡迎！我會一步一步帶你完成 LINE Bot 部署。在開始之前，讓我了解一下你的情況：
 
-**新手提示**：如果使用者是完全零基礎，建議先使用 `openclaw-course-guide` skill 完成帳號註冊與工具安裝（Step ①～④），再回到本 skill 的 Phase 2 開始部署。
+---
+
+## 📋 第一步：了解你的現況
+
+**請告訴我你現在到哪一步了？**
+
+1. **我還沒安裝任何東西** → 我會帶你從頭開始（帳號註冊 → 工具安裝 → 專案下載）
+2. **我有 OpenClaw 專案但還沒啟動** → 我會幫你啟動服務
+3. **OpenClaw 已經在跑了** → 我們直接來接 LINE
+4. **我不知道** → 沒關係，我們一起檢查
+
+---
+
+## 🧭 第二步：選擇你的 Tunnel 類型
+
+在設定 LINE Webhook 之前，你需要一個對外連線的網址。這裡有兩種選擇：
+
+| | **臨時網址 (Quick Tunnel)** | **固定網址 (固定 Tunnel)** |
+|---|---|---|
+| **網址** | 每次啟動都不同（如 `xxx.trycloudflare.com`） | 永遠固定（如 `bot.你的網域.com`） |
+| **費用** | 免費 | 需購買網域（~$1-10/年） |
+| **設定難度** | 簡單，5分鐘搞定 | 需要多一步設定 |
+| **重開機後** | 網址會變，要重新設定 Webhook | 網址不變，永遠可用 |
+| **適合** | 測試/開發/課程演示 | 正式上線/長期使用 |
+
+**你要選哪一個？**
+
+- **A. 臨時網址** - 我先帶你快速跑通，以後再升級
+- **B. 固定網址** - 我直接幫你用正式方式設定（需要先有網域）
+
+---
+
+## 第三步：根據選擇進行
+
+### 如果選擇 A（臨時網址）- 免費但每次重開要更新：
+
+1. 我會幫你啟動 Quick Tunnel
+2. 給你一個臨時網址
+3. 你去 LINE Developers 設定 Webhook
+4. 測試成功！
+
+**⚠️ 重要：每次重開電腦後**，Tunnel 網址會變！你需要：
+
+1. 重新啟動 Quick Tunnel（我會給你指令）
+2. 拿到新的網址
+3. 去 LINE Developers 後台更新 Webhook
+
+**更新 Webhook 網址的步驟：**
+1. 打開 https://developers.line.biz/console/
+2. 進入你的 Channel（Owen的蝦）
+3. 點擊 **Messaging API**
+4. 找到 **Webhook URL** 欄位
+5. 貼上新的網址（記得加 `/webhook/line` 在最後）
+6. 按 **Verify**
+7. 確認 **Use webhook** 是打開的
+
+**優點**：快速免費，當天就能跟 LINE 對話
+**缺點**：每次重開電腦網址會變，要更新 Webhook
+
+---
+
+### 如果選擇 B（固定網址）：
+
+1. 確認你已有網域且 DNS 託管在 Cloudflare
+2. 帶你建立 Cloudflare Tunnel
+3. 設定固定網址
+4. 設定 LINE Webhook（只設一次）
+
+**優點**：永遠不用再改 Webhook，重開機也沒關係
+**缺點**：需要購買網域（如果還沒有的話）
+
+---
+
+> ### 💡 我的建議
+> - **第一次玩**：選 A（臨時網址），先讓 Bot 跑起來再說
+> - **要正式上線**：選 B（固定網址），一勞永逸
+
+---
+
+## 開始互動
+
+**請回复我：**
+1. 你現在到哪一步了？（上面四個選項）
+2. 你想選臨時網址還是固定網址？（A 或 B）
 
 ---
 
