@@ -48,6 +48,56 @@ LINE 傳訊息後沒回覆
 
 ---
 
+## 先跑這 4 步（不要跳步）
+
+```bash
+# 1) Skills 路徑是否正確
+ls -la ~/.openclaw/workspace/skills
+
+# 2) 模型與認證是否正確
+docker compose run --rm openclaw-cli models
+
+# 3) 工具權限是否解鎖
+docker compose run --rm openclaw-cli config get tools.profile
+docker compose run --rm openclaw-cli config get tools.sessions.visibility
+
+# 4) 版本與健康
+docker compose run --rm openclaw-cli --version
+curl -i http://127.0.0.1:18789/healthz
+```
+
+通過標準：
+- Skills 可看到自訂 skill（來源為 workspace/managed）
+- `Default` 是 `openrouter/anthropic/claude-sonnet-4.5`
+- `tools.profile=full`、`tools.sessions.visibility=all`
+- `healthz` 回 `200`
+
+---
+
+## Skills 路徑錯誤（最常見）
+
+錯誤路徑（不會自動載入）：
+```text
+/app/skills/openclaw-skills/skills/<skill-name>/SKILL.md
+```
+
+正確路徑：
+```text
+~/.openclaw/workspace/skills/<skill-name>/SKILL.md
+```
+或：
+```text
+~/.openclaw/skills/<skill-name>/SKILL.md
+```
+
+修正後請重啟：
+```bash
+docker compose restart openclaw-gateway
+docker compose run --rm openclaw-cli skills list
+```
+
+---
+
 ## Webhook 相關問題
 
 ### Verify 失敗：SSL connection error
@@ -114,6 +164,97 @@ https://xxxx.trycloudflare.com/webhook/line
 ---
 
 ## Docker / Gateway 問題
+
+### 刪掉 `~/.openclaw` 後 Gateway 一直重啟
+
+症狀（logs）：
+```
+Missing config. Run `openclaw setup` or set gateway.mode=local
+```
+
+原因：主機上的 `~/.openclaw` 被移除後，容器掛載路徑內沒有完整設定。
+
+解法：
+```bash
+# 1) 重建設定與工作區
+docker compose run --rm openclaw-cli setup
+
+# 2) 明確設定本機模式
+docker compose run --rm openclaw-cli config set gateway.mode local
+
+# 3) 重啟
+docker compose up -d --force-recreate openclaw-gateway openclaw-office
+```
+
+補充：若 `openclaw-cli` 因 gateway 正在重啟而無法執行，先直接修主機檔案 `~/.openclaw/openclaw.json`，再重啟容器。
+
+### `bind=lan` 啟動失敗（Control UI origins）
+
+症狀（logs）：
+```
+Gateway failed to start: Error: non-loopback Control UI requires gateway.controlUi.allowedOrigins
+```
+
+原因：Gateway 綁定非 loopback（例如 `lan`）時，需要明確設定 Control UI 允許來源。
+
+建議解法（優先）：
+```json
+{
+  "gateway": {
+    "mode": "local",
+    "controlUi": {
+      "allowedOrigins": [
+        "http://127.0.0.1:18789",
+        "http://localhost:18789"
+      ]
+    }
+  }
+}
+```
+
+若只是臨時救火，可加：
+```json
+"dangerouslyAllowHostHeaderOriginFallback": true
+```
+但此為降級安全選項，僅建議短期使用。
+
+### `127.0.0.1:18789` 連不到的速查
+
+先做三步：
+```bash
+# 1) 看容器狀態
+docker compose ps
+
+# 2) 看健康檢查
+curl -i http://127.0.0.1:18789/healthz
+
+# 3) 看 gateway logs
+docker compose logs --tail 100 openclaw-gateway
+```
+
+判讀重點：
+- `healthz` 回 `200` 但前端顯示離線：多半是配對或 WebSocket 權限問題（看下一節）。
+- gateway 一直 restarting：先檢查 `gateway.mode` 與 `controlUi.allowedOrigins`。
+- `OPENCLAW_GATEWAY_BIND=loopback` 時，容器內只聽本機，常導致主機映射路徑不可用；本機 Docker 開發通常建議用 `lan` 並搭配 `allowedOrigins`。
+
+### Dashboard 顯示「pairing required」
+
+症狀：UI 顯示離線、要求裝置配對批准。
+
+解法：
+```bash
+# 列出待批准請求
+docker compose run --rm openclaw-cli devices list
+
+# 批准請求
+docker compose run --rm openclaw-cli devices approve <requestId>
+```
+
+手機端補充：
+```bash
+docker compose run --rm openclaw-cli dashboard --no-open
+```
+使用完整 URL（含 `#token=...`）在手機瀏覽器開啟，否則常因 token 遺失無法完成握手。
 
 ### Docker Desktop 未啟動
 
@@ -256,6 +397,74 @@ Gateway 可能還在啟動中。等 10-15 秒再 Verify。
 
 ## AI 模型問題
 
+### `No API key found for provider "anthropic"`
+
+症狀：
+```
+Agent failed before reply: No API key found for provider "anthropic"
+```
+
+高機率原因：
+1. 預設模型仍是 Anthropic 系列
+2. 你想用 OpenRouter，但容器沒吃到 `OPENROUTER_API_KEY`
+
+標準修復流程：
+```bash
+# 1) 套用 OpenRouter 六模型組
+docker compose run --rm openclaw-cli models set openrouter/anthropic/claude-sonnet-4.5
+docker compose run --rm openclaw-cli models fallbacks clear
+docker compose run --rm openclaw-cli models fallbacks add openrouter/moonshotai/kimi-k2.5
+docker compose run --rm openclaw-cli models fallbacks add openrouter/deepseek/deepseek-chat
+docker compose run --rm openclaw-cli models fallbacks add openrouter/openai/gpt-4.1
+docker compose run --rm openclaw-cli models fallbacks add openrouter/openrouter/auto
+docker compose run --rm openclaw-cli models fallbacks add openrouter/openrouter/free
+
+# 2) 檢查模型與認證
+docker compose run --rm openclaw-cli models
+
+# 3) 重新建立容器（確保新環境變數生效）
+docker compose up -d --force-recreate openclaw-gateway openclaw-office
+```
+
+你應該看到：
+- `Default: openrouter/anthropic/claude-sonnet-4.5`
+- `Auth overview` 出現 openrouter 的有效來源（env 或 auth profile）
+
+若還是失敗，檢查兩個服務都要有：
+```yaml
+environment:
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+```
+
+### terminal 有 key，但容器仍顯示 missing auth
+
+症狀：
+- `printenv OPENROUTER_API_KEY` 有值
+- 但 `docker compose run --rm openclaw-cli models` 仍顯示 `Missing auth - openrouter`
+
+原因：
+- key 只存在目前 shell session，沒有寫入專案 `.env`
+- 或寫入後沒有重建容器
+
+解法：
+```bash
+# 1) 先看 shell 是否有值
+printenv OPENROUTER_API_KEY
+
+# 2) 寫入 openclaw/.env
+# OPENROUTER_API_KEY=sk-or-v1-...
+
+# 3) 重建容器
+docker compose up -d --force-recreate openclaw-gateway openclaw-office
+
+# 4) 再驗證
+docker compose run --rm openclaw-cli models
+```
+
+判斷成功：
+- `Auth overview` 出現 openrouter 且來源為 env
+- 不再出現 `No API key found for provider "anthropic"`
+
 ### 模型沒回應（Timeout）
 
 ```bash
@@ -266,7 +475,7 @@ docker compose logs --tail 200 openclaw-gateway | grep -i "model\|timeout\|error
 解法：
 ```bash
 # 切換模型
-docker compose run --rm openclaw-cli models set openrouter/openrouter/free
+docker compose run --rm openclaw-cli models set openrouter/anthropic/claude-sonnet-4.5
 
 # 或切到特定模型
 docker compose run --rm openclaw-cli models set openrouter/moonshotai/kimi-k2.5
@@ -351,3 +560,114 @@ docker compose run --rm openclaw-cli channels status --probe
 # 重啟所有服務
 docker compose restart
 ```
+
+---
+
+## 版本升級排錯（Update available）
+
+症狀：
+- 介面顯示有新版本可更新
+- 你已 `git pull`，但 runtime 還是舊版
+
+原因：
+- `openclaw:local` image 沒重建，容器仍跑舊映像
+
+標準流程：
+```bash
+git pull --rebase --autostash
+docker build -t openclaw:local .
+docker compose up -d --force-recreate openclaw-gateway openclaw-office
+docker compose run --rm openclaw-cli --version
+curl -i http://127.0.0.1:18789/healthz
+```
+
+判斷成功：
+- `--version` 為目標版本（或更高）
+- `healthz` 回 `200 OK`
+
+常見誤區：
+- 只 `git pull` 沒 `docker build`
+- 有更新但 UI 仍顯示舊版（瀏覽器快取，硬重新整理）
+
+---
+
+## API 費用控制（7 招落地 + 驗收）
+
+### 1) 模型分層
+
+設定範例（OpenRouter）：
+```bash
+docker compose run --rm openclaw-cli models set openrouter/anthropic/claude-sonnet-4.5
+docker compose run --rm openclaw-cli models fallbacks clear
+docker compose run --rm openclaw-cli models fallbacks add openrouter/moonshotai/kimi-k2.5
+docker compose run --rm openclaw-cli models fallbacks add openrouter/deepseek/deepseek-chat
+docker compose run --rm openclaw-cli models fallbacks add openrouter/openai/gpt-4.1
+docker compose run --rm openclaw-cli models fallbacks add openrouter/openrouter/auto
+docker compose run --rm openclaw-cli models fallbacks add openrouter/openrouter/free
+```
+
+驗收：
+```bash
+docker compose run --rm openclaw-cli models status --plain
+docker compose run --rm openclaw-cli models fallbacks list
+```
+
+### 2) 控制上下文長度
+
+執行原則：
+- 只保留最近 5-10 則對話歷史
+- 話題切換時重開 session
+- 長對話改為「摘要記憶」而非完整歷史
+
+驗收：
+- 長對話每輪輸入 token 不再持續線性上升
+
+### 3) FAQ 快取
+
+執行原則：
+- 先盤點高頻問題 Top 20-30
+- 建立標準回覆，人工審核後入庫
+- 相似度達門檻（例如 0.85）直接回快取
+
+驗收：
+- 高頻問題命中快取比例逐週提升
+- 命中快取的請求不觸發模型呼叫
+
+### 4) 本地模型分流（Ollama）
+
+執行原則：
+- 分類、擷取、格式化走本地
+- 複雜推理與高品質生成走雲端
+
+驗收：
+- 雲端模型請求數下降
+- 核心回覆品質維持可接受
+
+### 5) Prompt 精簡
+
+執行原則：
+- 刪重複規則，保留核心約束
+- 長描述改短規格 + 範例
+- 不把可推導資訊重複寫進 system prompt
+
+驗收：
+- 每次請求的固定輸入 token 下降
+
+### 6) 用量上限與告警
+
+執行原則：
+- 設日上限、月上限、50%/80% 告警
+- dev/prod 分離 API key
+
+驗收：
+- 不會再出現單日異常爆量超支
+
+### 7) 批次處理
+
+執行原則：
+- 可合併任務一次送出（分類、審核、翻譯）
+- 降低每次請求的固定 overhead
+
+驗收：
+- 同量任務的 API 呼叫次數下降
+- 同量任務的平均成本下降
