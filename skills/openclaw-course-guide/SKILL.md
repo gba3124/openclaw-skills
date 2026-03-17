@@ -335,6 +335,25 @@ echo $OPENROUTER_API_KEY
 
 確認 Docker Desktop 已啟動（綠色圖示），且終端機在 OpenClaw 專案資料夾內。
 
+### Docker 安裝前置標準流程（固定先做）
+
+使用 Docker 安裝 OpenClaw 前，先固定跑完以下三步，避免環境不完整就直接啟動服務：
+
+```bash
+# STEP 01: Clone 原始碼
+git clone https://github.com/openclaw/openclaw.git
+
+# STEP 02: 執行設定腳本（初始化）
+./docker-setup.sh
+
+# STEP 03: 背景啟動服務
+docker compose up -d
+```
+
+補充：
+- `./docker-setup.sh` 要在 OpenClaw 專案根目錄執行
+- 第三步跑完後可用 `docker compose ps` 確認服務是否為 Up
+
 ### 先配置 OpenRouter 六模型組（建議）
 
 ```bash
