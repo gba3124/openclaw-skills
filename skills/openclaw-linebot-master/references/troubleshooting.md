@@ -107,7 +107,7 @@ docker compose run --rm openclaw-cli skills list
 檢查步驟：
 ```bash
 # 確認服務可用（用瀏覽器開啟應該有回應）
-curl -sI https://你的網址/webhook/line
+curl -sI https://你的網址/line/webhook
 
 # 檢查 SSL 憑證（若不用 Cloudflare Tunnel 時）
 openssl s_client -connect your-domain.com:443 -servername your-domain.com 2>/dev/null | openssl x509 -noout -issuer
@@ -121,7 +121,7 @@ openssl s_client -connect your-domain.com:443 -servername your-domain.com 2>/dev
 | 憑證鏈不完整 | 使用 fullchain.pem 而非 cert.pem |
 | Tunnel 沒在跑 | 確認 cloudflared 容器或指令還活著 |
 | Gateway 沒在跑 | `docker compose up -d openclaw-gateway` |
-| URL 打錯 | 確認包含 `/webhook/line` 路徑 |
+| URL 打錯 | 確認包含 `/line/webhook` 路徑 |
 
 ### Verify 成功但 Bot 不回覆
 
@@ -139,26 +139,105 @@ docker compose logs -f openclaw-gateway
 
 - **有收到但報錯** → 看錯誤訊息對應下方章節
 
+### Verify 失敗：`HTTP 404 Not Found`
+
+症狀（LINE 後台）：
+```
+The webhook returned an HTTP status code other than 200. (404 Not Found)
+```
+
+高機率原因：Webhook 路徑填錯。  
+OpenClaw LINE channel 常見正確路徑是：
+```
+/line/webhook
+```
+不是：
+```
+/webhook/line
+```
+
+快速判斷（本機先測）：
+```bash
+# 這條若回 404，代表你現在填錯路徑
+curl -i -X POST http://127.0.0.1:18789/webhook/line \
+  -H 'content-type: application/json' -d '{}'
+
+# 這條若回 400 且顯示 Missing X-Line-Signature，代表路由存在
+# （400 是正常的，因為這個手動測試沒有 LINE 簽章）
+curl -i -X POST http://127.0.0.1:18789/line/webhook \
+  -H 'content-type: application/json' -d '{}'
+```
+
+若你用 Quick Tunnel，請確認 LINE 後台填的是：
+```
+https://xxxx.trycloudflare.com/line/webhook
+```
+
+排查清單（照順序）：
+1. Webhook URL 最後一定是 `/line/webhook`
+2. `docker compose ps` 確認 `openclaw-gateway` 是 `Up`
+3. Tunnel 有在跑（Quick Tunnel 終端機不能關）
+4. 按 `Verify` 後再用 LINE 實際傳訊息驗收
+
+### 常見誤解：換 Webhook 會不會讓 Token/Secret 一起變？
+
+不會。  
+Webhook URL、`Channel Access Token`、`Channel Secret` 是三個獨立項目：
+
+- 換 Webhook URL：只改 LINE 要打到哪個網址
+- Token/Secret：只有你在 LINE Developers 重新發行（Reissue/Reset）時才會改變
+
+快速核對目前容器是否吃到正確值（遮罩顯示）：
+```bash
+docker inspect openclaw-openclaw-gateway-1 --format '{{range .Config.Env}}{{println .}}{{end}}' \
+  | awk -F= '/^LINE_CHANNEL_ACCESS_TOKEN=|^LINE_CHANNEL_SECRET=/{print $1"=<masked>"}'
+```
+
+當症狀是 `404` 時，優先修「路徑或網址」；  
+當症狀是 `401/403` 時，再優先檢查「Token/Secret」。
+
+### 收到 `access not configured` + `Pairing code`
+
+症狀（LINE 訊息）：
+```
+access not configured.
+Pairing code: XXXXXXXX
+```
+
+原因：Webhook 已通，但目前 LINE 使用者尚未完成配對授權（`dmPolicy=pairing` 預設行為）。
+
+解法（擇一）：
+
+```bash
+# 直接核准當次配對碼
+docker compose run --rm openclaw-cli pairing approve line <PAIRING_CODE>
+
+# 查看是否還有待核准請求
+docker compose run --rm openclaw-cli pairing list line
+```
+
+核准後，請使用者再傳一次訊息即可恢復正常回覆。
+
 ### Webhook URL 格式
 
 正確格式：
 ```
-https://你的網域/webhook/line
+https://你的網域/line/webhook
 ```
 
 常見錯誤：
 ```
-# ❌ 少了 /webhook/line
+# ❌ 少了 /line/webhook
 https://xxxx.trycloudflare.com
 
 # ❌ 多了斜線
-https://xxxx.trycloudflare.com/webhook/line/
+https://xxxx.trycloudflare.com/line/webhook/
 
 # ❌ 用了 http 不是 https
-http://xxxx.trycloudflare.com/webhook/line
+http://xxxx.trycloudflare.com/line/webhook
 
 # ✅ 正確
-https://xxxx.trycloudflare.com/webhook/line
+https://xxxx.trycloudflare.com/line/webhook
 ```
 
 ---

@@ -490,6 +490,15 @@ https://xxxx.trycloudflare.com/line/webhook
 4. 打開 **Use webhook**
 5. 關閉 **Auto-reply messages**（避免重複回覆）
 
+404 快速提醒（課堂高頻）：
+- 若 Verify 顯示 `404 Not Found`，通常是把路徑填成 `/webhook/line`。
+- OpenClaw LINE channel 應使用 `/line/webhook`。
+- 手動 `curl` 測 `/line/webhook` 回 `400 Missing X-Line-Signature` 屬正常，表示路由存在。
+
+另外，請直接澄清學員常見誤解：
+- **更換 Webhook URL 不會改變** `Channel Access Token` 與 `Channel Secret`。
+- 只有在 LINE Developers 重新發行/重設時，Token 或 Secret 才會改變。
+
 ---
 
 ## Phase 4：驗收
