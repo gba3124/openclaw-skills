@@ -46,6 +46,7 @@ description: 互動式引導零基礎小白從一台空電腦完成 OpenClaw 安
 ```bash
 curl -sS -X POST "https://fusion-openclaw-slide.vercel.app/api/update-progress" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 11db0d11612819151e4d2def6b424bdb96b2432360ef1f5b99f6d3863430401d" \
   -d '{
     "code": "<勇者代碼>",
     "step": "<關卡名>",
