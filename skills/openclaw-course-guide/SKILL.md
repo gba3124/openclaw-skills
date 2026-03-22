@@ -16,6 +16,7 @@ description: 互動式引導零基礎小白從一台空電腦完成 OpenClaw 安
 3. 勇者代碼是唯一通行證，沒有代碼不進任何技術步驟
 4. 每次關卡狀態改變，立刻呼叫進度 API
 5. **學員狀態檔**：與本 `SKILL.md` **同一個資料夾**內維護 `LEARNER_STATE.md`（純 Markdown）；**一有可用資訊就寫入或整檔更新**，不可拖到「有空再記」。多個對話回合、換裝置續跑時，優先讀此檔再接續
+6. **環境與權限**：學員說 clone 要登入 GitHub、PowerShell 不能跑腳本、沒有 Node／brew、指令找不到等，**主動**依本文件 **「環境前置與常見坑」** 與 **1-1a** 帶排錯；**不要**用「去辦帳號／自己 Google」敷衍帶過
 
 ---
 
@@ -289,7 +290,9 @@ curl -fsSL https://claude.ai/install.sh | bash
 **1-1a 安裝 Git 與課程 Skills（公開 `git clone`，免 GitHub 登入）**
 
 課程陪跑會用到 `openclaw-course-guide`、`openclaw-linebot-master` 等 skill。  
-取得方式：**不用登入 GitHub**——公開倉庫用 HTTPS clone 即可（不需 `gh auth`、不需帳號密碼，除非日後 GitHub 政策改變）。
+取得方式：**不用登入 GitHub、不需要申請帳號**——公開倉庫用 **HTTPS** 讀取即可（不需 `gh auth`、不需 Personal Access Token、不需輸入密碼；**除非你誤用 SSH 網址或公司網路攔截**，見下方「被要求登入時」）。
+
+**陪跑原則（歐文必做）：** 學員一說「clone 要登入／沒 GitHub」——**先判斷是誤會還是真的環境擋**，依下方順序帶排錯；不要直接叫他「去辦 GitHub」當成唯一解。
 
 **步驟 1：確認本機有 Git**
 
@@ -313,6 +316,25 @@ git clone https://github.com/gba3124/openclaw-skills.git
 ```
 
 可改成自訂資料夾名，例如：`git clone https://github.com/gba3124/openclaw-skills.git ~/openclaw-skills`。
+
+**務必使用 HTTPS 網址**（以 `https://github.com/` 開頭）。若學員貼的指令是 `git@github.com:gba3124/openclaw-skills.git`，那是 **SSH**，本機沒放 SSH 金鑰時就會卡住或跑去要登入——請改成上面這行 HTTPS。
+
+**被要求登入 GitHub、或跳出帳密／Token 視窗時（公開倉不該需要）：**
+
+1. **先看網址**：是否為 `https://github.com/gba3124/openclaw-skills.git`。不是就改回這條再試。
+2. **拒絕用 SSH 混過去**：不要把「去辦 GitHub + 建 SSH key」當預設答案；先換 HTTPS。
+3. **Windows 若跳出 Git Credential Manager**：多半是先前存過錯誤憑證或誤連到私有庫。可試：關掉視窗 → 用 **全新資料夾**再執行 clone；仍不行則在「認證小幫手」裡**清除 github.com 的舊憑證**後重試（不必為了公開 clone 新建 PAT）。
+4. **公司／校園網路**：若 HTTPS 被攔截，可換手機熱點試；或改用下方 **ZIP 備援**。
+5. **仍失敗**：請學員把**完整終端機錯誤原文**貼上（含紅字），再對症處理。
+
+**ZIP 備援（完全不用 Git、也不用 GitHub 帳號）：**
+
+1. 瀏覽器開：`https://github.com/gba3124/openclaw-skills`
+2. 綠色 **Code** → **Download ZIP**
+3. 解壓縮後會得到資料夾（常名 `openclaw-skills-main`），其中已有 `skills/openclaw-course-guide`、`skills/openclaw-linebot-master`
+4. **步驟 3** 複製時，把路徑裡的資料夾名改成你解壓後的實際名稱（例如 `openclaw-skills-main\skills\...`）
+
+**OpenClaw 主程式**（`open-claw/openclaw`）同樣是公開倉，原則相同：HTTPS clone 或 GitHub 網頁 Download ZIP，**不需**為了下載原始碼而登入。
 
 **步驟 3：複製到 OpenClaw 會掃描的 skills 目錄**
 
@@ -708,11 +730,54 @@ curl -i http://127.0.0.1:18789/healthz          # 確認健康
 
 ---
 
+## 環境前置與常見坑（GitHub、Windows、macOS）
+
+**虛擬助手歐文**遇到學員卡關時，主動依作業系統對照下面條目排查；**不要假設**學員已裝好 Node、brew 或 PowerShell 已開權限。
+
+### GitHub 與 clone（再強調一次）
+
+| 狀況 | 處理 |
+|------|------|
+| 「沒 GitHub 不能 clone」 | 公開庫 **HTTPS** 與 **ZIP** 都不需要帳號；先換網址或改 ZIP（見 **1-1a**）。 |
+| 只備份 SSH 網址 | 改 `https://github.com/使用者/倉庫.git`。 |
+| 要 Token 才能下載 | 多為誤用私有庫網址、或憑證管理員搞錯；清憑證或換 ZIP。 |
+
+### Windows（原生 PowerShell／CMD）
+
+| 症狀 | 處理 |
+|------|------|
+| `irm ... \| iex` 被擋、`execution of scripts is disabled` | 以**目前使用者**開權限（不需全機強開）：`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`，選 **Y**，**關閉 PowerShell 重開**再執行腳本。仍被擋再試：**以系統管理員開啟** PowerShell 執行同樣指令（僅在必要時）。 |
+| `winget` 找不到 | 從 Microsoft Store 安裝 **App Installer**，或至 [WinGet 說明](https://learn.microsoft.com/windows/package-manager/winget/) 更新；暫時可改從官網下載 Git／Node 安裝包。 |
+| 安裝程式說沒權限 | 對安裝檔或 PowerShell **右鍵 → 以系統管理員身分執行**（僅在該步需要）。 |
+| `node`／`npm` 找不到（要走 **1-4d** npm 線） | 先裝 [Node.js LTS](https://nodejs.org/)，**重開終端**，再驗 `node -v`、`npm -v`；或**改走 1-4e** 官方 `install.ps1`（通常會處理 Node）。 |
+| 把 **Mac 的 `brew`** 照抄到 Windows | **錯誤**：Windows 沒有 Homebrew 當預設；請用 **winget**、官網安裝檔，或 **WSL2** 內再用 `apt`。 |
+| Git 在 Windows 裝了但指令仍沒有 | 重開終端；檢查安裝時是否勾選 **Add Git to PATH**；必要時重裝 Git for Windows。 |
+| 路徑／反斜線搞混 | PowerShell 複製 skill 時用 `Copy-Item` 範例的路徑；在 **WSL** 裡請用 Linux 路徑與 `cp`，不要混用 `C:\...` 與 `~/` 同一條指令。 |
+
+### macOS
+
+| 症狀 | 處理 |
+|------|------|
+| 沒有 `brew` | Homebrew **不是**系統內建；依 [brew.sh](https://brew.sh) 一條指令安裝後再 `brew install ...`。 |
+| 沒有 `git` | `xcode-select --install` 或 `brew install git`。 |
+| 文件寫 Windows PowerShell | Mac 請用 **終端機**對應的 bash／zsh 區塊，不要執行 `irm \| iex`。 |
+
+### 給歐文的帶跑順序（環境卡死時）
+
+1. 請學員**貼完整錯誤原文**（或截圖裡逐字打出紅字）。
+2. 對照上表**只做一項**修正，再試一次（符合「一次一題」精神，但技術上可一次只改一個變因）。
+3. 通過後在 **`LEARNER_STATE.md`** 足跡記一筆（例：`排除：PowerShell ExecutionPolicy`）。
+
+---
+
 ## 排錯速查
 
 | 症狀 | 第一步 |
 |------|--------|
-| 指令找不到 | 重開終端 / `source ~/.zshrc` |
+| clone 要登入 GitHub／沒帳號 | 見 **1-1a** 與上文 **GitHub 與 clone**；優先 HTTPS 或 ZIP |
+| PowerShell 腳本不能執行 | **環境前置與常見坑** → Windows → ExecutionPolicy |
+| Windows 沒有 Node／npm | 裝 Node LTS 或改 **1-4e**；見上表 |
+| 指令找不到 | 重開終端 / `source ~/.zshrc`（Mac）；Windows 查 PATH |
 | Docker daemon 錯誤 | 開 Docker Desktop |
 | Verify 失敗 | `docker compose ps` 確認 gateway Up，網址末端要加 `/line/webhook` |
 | 有已讀無回覆 | 重啟 gateway + 重跑 Tunnel |
@@ -735,7 +800,7 @@ docker compose restart openclaw-gateway
 - **學員狀態檔**：與本 `SKILL.md` 同目錄之 **`LEARNER_STATE.md`**（純 Markdown，單一檔案集中記錄勇者代碼、安裝路線、Q3 現況、8 關進度、足跡；觸發即更新）。結構範本見同目錄 **`LEARNER_STATE.example.md`**
 - **安裝環境代號**：**macOS 1.a** 本機直裝、**macOS 1.b** Docker 包裝、**Windows 2.a** 本機（npm 或 PowerShell 腳本）、**Windows 2.b** WSL2 Ubuntu；對照表與關卡 2+ 指令替換規則見 **安裝環境差異總覽**
 - **Skills 路徑**：`~/.openclaw/workspace/skills/<name>/SKILL.md`（多一層目錄不會被掃到）
-- **課程 skills 取得**：公開倉 `https://github.com/gba3124/openclaw-skills.git` → `git clone` 後將 `skills/*` 複製到上列路徑（詳見關卡 1 的 **1-1a**，免 GitHub 登入）
+- **課程 skills 取得**：公開倉 `https://github.com/gba3124/openclaw-skills.git` → **HTTPS** `git clone` 或 **GitHub 網頁 Download ZIP** 皆可，**不需** GitHub 登入／Token；誤用 SSH 網址才會像要登入（詳 **1-1a** 與 **環境前置與常見坑**）
 - **預設模型**：`openrouter/anthropic/claude-sonnet-4.5`
 - **工具權限**必須：`tools.profile=full` 且 `tools.sessions.visibility=all`
 - 只 `git pull` 不會升容器版本，必須 `docker build` + `force-recreate`
