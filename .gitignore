@@ -12,3 +12,6 @@
 build/
 .env
 node_modules/
+
+# 學員個人陪跑狀態（含勇者代碼等，勿提交）
+skills/openclaw-course-guide/LEARNER_STATE.md

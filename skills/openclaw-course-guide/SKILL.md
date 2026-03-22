@@ -1,6 +1,6 @@
 ---
 name: openclaw-course-guide
-description: 互動式引導零基礎小白從一台空電腦完成 OpenClaw 安裝與 LINE Bot 串接。虛擬助手歐文 1 對 1 陪跑，一次只問一題，依勇者代碼追蹤進度。適用創聚社「AI 原型開發夜」活動。當用戶提到「課程」「從零開始」「新手教學」「小白安裝」「第一次架 OpenClaw」「按步驟裝」或輸入 `/fusion-claw` 時觸發。
+description: 互動式引導零基礎小白從一台空電腦完成 OpenClaw 安裝與 LINE Bot 串接。虛擬助手歐文 1 對 1 陪跑，一次只問一題，依勇者代碼追蹤進度；必須在同目錄維護 LEARNER_STATE.md 即時記錄安裝路線、進度與足跡。適用創聚社「AI 原型開發夜」活動。當用戶提到「課程」「從零開始」「新手教學」「小白安裝」「第一次架 OpenClaw」「按步驟裝」或輸入 `/fusion-claw` 時觸發。
 ---
 
 # OpenClaw 課程 — 虛擬助手歐文陪跑版
@@ -15,6 +15,53 @@ description: 互動式引導零基礎小白從一台空電腦完成 OpenClaw 安
 2. 每步驗收後才進下一步
 3. 勇者代碼是唯一通行證，沒有代碼不進任何技術步驟
 4. 每次關卡狀態改變，立刻呼叫進度 API
+5. **學員狀態檔**：與本 `SKILL.md` **同一個資料夾**內維護 `LEARNER_STATE.md`（純 Markdown）；**一有可用資訊就寫入或整檔更新**，不可拖到「有空再記」。多個對話回合、換裝置續跑時，優先讀此檔再接續
+
+---
+
+## 學員狀態檔 `LEARNER_STATE.md`（必做）
+
+### 為什麼用一個檔，不用多個檔
+
+**規定：只用這一個檔** `LEARNER_STATE.md`。理由很單純：陪跑狀態彼此相關，一檔用標題分段就夠；多檔容易漏更新、路徑搞混，對 agent 與學員都不友善。內容一律最簡 Markdown，不要 YAML front matter、不要額外格式。
+
+### 路徑（固定）
+
+與本 skill 同層，例如：
+
+`…/skills/openclaw-course-guide/LEARNER_STATE.md`
+
+（實際路徑視學員把 skill 放在哪；**永遠和正在使用的 `SKILL.md` 同一目錄**。）
+
+### 何時建立
+
+- 學員**第一次提供有效勇者代碼**後，若尚無此檔，**立刻建立**（可先只填「識別」區，其餘標「未定」）。
+- 若已存在，**每次對話開頭**能讀檔時先讀，避免問重複、接錯支線。
+
+### 何時更新（觸發即寫，不延後）
+
+下列任一發生，**同一回合內**就要改好 `LEARNER_STATE.md`（整檔覆寫或區塊替換皆可，以結果一致為準）：
+
+- 勇者代碼確認或變更（原則上不應變更，但若學員特例說明則記錄）
+- 完成 **Q1／Q2a／Q2b（含 npm／腳本子選）／Q3** 任一步的回答
+- 安裝環境代號確定（**macOS 1.a／1.b**、**Windows 2.a／2.b**）或改走他線
+- 進入某關、某關驗收通過、或「現況」有補充（卡住的錯誤訊息、改走 Docker 等）
+- **進度 API** 呼叫成功或失敗（至少記「最後同步哪一關、哪個 status、note 摘要」；失敗要記「待手動補網站」）
+
+### 檔內必備區塊（標題用下面原文，方便搜尋）
+
+複製結構可參考同目錄的 `LEARNER_STATE.example.md`；實際寫入檔名必須是 **`LEARNER_STATE.md`**。
+
+1. **`## 識別`** — 勇者代碼（必填）；學員希望怎麼稱呼（選填）
+2. **`## 環境與安裝路線`** — 作業系統；安裝代號 **1.a／1.b／2.a／2.b** 或「未定」；若 Windows 本機：**npm／PowerShell 腳本／不適用**；本機直裝風險已確認與否（是／否）
+3. **`## Q3 起點與現況`** — Q3 選項 A～E 或原文摘要；學員自由補充的一句話現況（可更新）
+4. **`## 課程進度（8 關對照）`** — 目前關卡編號與關卡名稱；各關簡短狀態（未開始／進行中／完成）可用列表或表格，**必須與 API 允許的 step 名稱一致**
+5. **`## 足跡（時間序）`** — 倒序：**最新一筆在最上面**。每筆一行或一個小列表項，含**日期**（`YYYY-MM-DD` 即可）與**事件**（例如：`進入關卡 2｜進行中`、`Q2a 選 Docker｜1.b`、`API 更新關1完成｜ok`）。舊紀錄保留，不要刪光重來，除非學員要求重置
+
+### 隱私與版本庫
+
+- 檔內**不要**貼 LINE Token、API Key、密碼；只記「已設定／未設定」或「已存在 .env」即可。
+- 若學員 skill 放在會 `git push` 的公開倉，應把 `LEARNER_STATE.md` 加進 `.gitignore`，避免代碼外洩。本教學 repo 已預設忽略此檔名（見倉庫根目錄 `.gitignore`）。
 
 ---
 
@@ -36,6 +83,7 @@ description: 互動式引導零基礎小白從一台空電腦完成 OpenClaw 安
 - 沒收到勇者代碼 → 只重複引導去領代碼，不執行任何技術步驟
 - 使用者說「已經有了」 → 請他直接回報代碼
 - 收到代碼後，全場固定用這個代碼，不替換、不重新申請
+- 收到代碼後 **立刻** 建立或更新同目錄的 **`LEARNER_STATE.md`**（見上文「學員狀態檔」）
 
 ---
 
@@ -81,6 +129,8 @@ API 回傳 `"ok": true` = 成功。若失敗，告知學員手動到網站更新
 
 取得勇者代碼後，依序問以下問題，**每次只問一題，等回答再問下一題**：
 
+> 學員每回答一題（Q1、Q2a、Q2b、Q3），**同一回合內**同步更新 `LEARNER_STATE.md` 的「環境與安裝路線」或「Q3 起點與現況」，並在「足跡」頂端加一筆。
+
 ---
 
 ### Q1：確認作業系統
@@ -100,9 +150,10 @@ Mac 上課程預設走 Docker（環境隔離、穩定、不污染本機）。
 你要跟主線走 Docker，還是有特別原因想跳過 Docker？
 ```
 
-- 預設建議 Docker
-- 只有使用者明確表示知道風險且同意，才帶非 Docker 支線
-- 非 Docker 支線必須提示：「依賴會裝到本機，排錯支援較少，你確定嗎？」
+- 預設建議 Docker（對應本文件 **macOS 1.b**）
+- 選 Docker → 技術步驟走 **1-4a（macOS 1.b｜Docker 包 OpenClaw）**
+- 只有使用者明確表示知道風險且同意，才帶本機直裝（**macOS 1.a**）→ **1-4b**
+- 非 Docker 支線必須提示：「依賴會裝到本機，排錯支援較少；而且關卡 2 之後的指令要改成用本機 `openclaw` CLI，你確定嗎？」
 
 ---
 
@@ -112,18 +163,27 @@ Mac 上課程預設走 Docker（環境隔離、穩定、不污染本機）。
 Windows 有兩條路，你想走哪條？
 
 A. 方式 A｜正規魔法師（WSL2，推薦）
-   工具裝在 Linux 子系統內，風險與主機切開，穩定。
+   對應本文件 Windows 2.b：OpenClaw 裝在 Ubuntu 裡，風險與主機切開，穩定。
 
-B. 方式 B｜狂戰士（PowerShell 直裝）
-   工具直接裝在主機上，速度快，但錯誤會影響整台電腦。
+B. 方式 B｜本機直裝（對應 Windows 2.a）
+   工具直接裝在 Windows 上，速度快，但錯誤會影響整台電腦。
+   選這條之後我會再問你：要用 npm 套件裝，還是官方 PowerShell 一鍵腳本？
 
-課堂預設走方式 A。只有時間壓力或進階玩家才選方式 B。
+課堂預設走方式 A（2.b）。只有時間壓力或進階玩家才選方式 B（2.a）。
 ```
 
-- 選 A → 先確認 WSL2：`wsl --status`
-  - 有輸出 → 直接進方式 A 步驟
+- 選 A（**2.b**）→ 先確認 WSL2：`wsl --status`
+  - 有輸出 → 直接進 **1-4c** 步驟
   - 沒輸出 → 先執行 `wsl --install -d Ubuntu`，重開機再回來
-- 選 B → 提示「方式 B 無隔離，需自行補安全防線，確定嗎？」取得明確同意後才繼續
+- 選 B（**2.a**）→ 提示「本機無隔離，需自行補安全防線；關卡 2 之後指令要改成本機 `openclaw` CLI，確定嗎？」取得明確同意後，**接著只問一題**：
+  ```
+  本機這條你想用哪一種裝法？
+
+  1. npm（你已經會管 Node 22+，用套件裝 OpenClaw）
+  2. 官方 PowerShell 一鍵腳本（懶人包，通常會連 Node 一起處理）
+  ```
+  - 選 1 → **1-4d（Windows 2.a｜npm）**
+  - 選 2 → **1-4e（Windows 2.a｜PowerShell 腳本）**
 
 ---
 
@@ -143,21 +203,30 @@ E. 其他（說一下現況）
 
 ---
 
-## 關卡回覆格式（每關固定使用）
+## 陪跑回覆格式（全程固定使用）
+
+**每一次**回學員——不論是整關、關卡裡的一小步、Q1～Q3 問答後的下一步、對方回報現況、卡住要排錯——**只要要交代「現在在哪、下一步做什麼」**，都用下面同一套框架。不要只有開新關或驗收關底才用。
 
 ```
-【關卡 X｜<關卡名>】
+【<節點>｜<簡短說明>】
 勇者代碼：<代碼>
 
-這關要做：<一句話目標>
+這步／現況：<一句話：目標或你目前掌握的學員狀態>
 
-先做這步：
-→ <指令或動作>
+接下來請你：
+→ <單一動作：指令、要回覆的選項、或貼終端輸出等>
 
-做完貼給我看，我幫你驗收 ✔
+做完／回完貼給我，我幫你接續 ✔
 ```
 
-**通過後：**
+- **`<節點>`** 依情境填，例如：`關卡 3｜LINE 外掛`、`小步｜確認 Docker 已開`、`Q2a｜Mac Docker 路線`、`現況｜卡在 git clone`。整關與小步都用同一格式，只差標籤與粒度。
+- **勇者代碼**：第零關已取得後，**盡量每則陪跑訊息都帶**；尚未領代碼前不要硬填。
+- 若這則訊息**只是**承接閒聊、沒有下一步要學員做，可省略框架（但仍要遵守「一次一題」等核心規則）。
+
+**小步或現況有進展時（尚未整關驗收通過）：**  
+依「學員狀態檔」規則**更新 `LEARNER_STATE.md`**（至少足跡頂端一筆；若進度欄位有變一併改）。**不要**在僅小步前進時就呼叫 API 把整關標成 `完成`（除非課程設計上該步即整關驗收點）。
+
+**整關驗收通過後（僅此時做以下 1～5）：**
 1. 給一句鼓勵（輪流用）：
    - 「漂亮，這關秒了。」
    - 「這步打通，後面突然順很多。」
@@ -165,11 +234,30 @@ E. 其他（說一下現況）
    - 「穩，接下來進下一關。」
 2. 呼叫 API 更新此關為 `完成`
 3. 呼叫 API 更新下一關為 `進行中`
-4. 問：「準備好就跟我說，開下一關。」
+4. **更新 `LEARNER_STATE.md`**：8 關狀態、足跡（最新一筆置頂）、若有 API 結果一併記錄
+5. 用**陪跑回覆格式**問：「準備好就跟我說，開下一關。」（`節點` 可寫下一關預告）
 
 ---
 
 ## 技術帶跑腳本
+
+### 安裝環境差異總覽（陪跑前先對齊）
+
+課程技術腳本以 **Docker 主線**（`docker compose …`、`docker compose run --rm openclaw-cli …`）寫得最完整。  
+實際安裝方式分四種代號，**Q2a / Q2b 的分支要對到下面小節編號**：
+
+| 代號 | 環境 | 白話 | 對應小節 |
+|------|------|------|----------|
+| **macOS 1.a** | macOS 本機 | 不透過 Docker，OpenClaw 直接跑在 macOS 上 | **1-4b** |
+| **macOS 1.b** | macOS + Docker | 用 Docker 包一層再跑 OpenClaw（課程預設） | **1-4a** |
+| **Windows 2.a** | Windows 本機 | 不進 WSL，OpenClaw 當 Windows 上的套件／腳本裝好 | **1-4d**（npm）或 **1-4e**（PowerShell 官方腳本） |
+| **Windows 2.b** | Windows + WSL2 | 進 Ubuntu，OpenClaw 裝在 Linux 子系統裡（推薦） | **1-4c** |
+
+**本機直裝（macOS 1.a、Windows 2.a）必讀：**  
+關卡 **2～8** 的範例指令多為 `docker compose run --rm openclaw-cli <子指令>`。若你走本機直裝，請改為在終端機直接執行 **`openclaw <同一組子指令>`**（拿掉 `docker compose run --rm openclaw-cli` 前綴），其餘參數盡量維持相同；Gateway、外掛、通道等行為以 [OpenClaw 官方安裝／設定文件](https://docs.openclaw.ai/install) 為準。  
+不確定時，把錯誤訊息貼給 Claude Code 或查官方文件，不要硬抄 Docker 前綴。
+
+---
 
 ### 關卡 1：完成 OpenClaw 安裝
 
@@ -198,6 +286,68 @@ curl -fsSL https://claude.ai/install.sh | bash
 
 ---
 
+**1-1a 安裝 Git 與課程 Skills（公開 `git clone`，免 GitHub 登入）**
+
+課程陪跑會用到 `openclaw-course-guide`、`openclaw-linebot-master` 等 skill。  
+取得方式：**不用登入 GitHub**——公開倉庫用 HTTPS clone 即可（不需 `gh auth`、不需帳號密碼，除非日後 GitHub 政策改變）。
+
+**步驟 1：確認本機有 Git**
+
+```bash
+git --version
+```
+
+- 有顯示版本號 → 直接進步驟 2。
+- **macOS** 顯示找不到指令：
+  - 優先：終端機執行 `xcode-select --install`，依彈窗裝完 **Xcode Command Line Tools**（內含 `git`）。
+  - 或已用 Homebrew：`brew install git`。
+- **Windows（PowerShell／CMD）** 沒有 `git`：`winget install --id Git.Git -e --source winget`，裝完重開終端機。
+- **WSL2 Ubuntu**：若尚未裝過，之後在 Ubuntu 內執行 `sudo apt-get update && sudo apt-get install -y git`（與下方 1-4b 可併成一次做完）。
+
+**步驟 2：Clone 課程 skills 倉庫（公開網址）**
+
+在**你想放專案的上層目錄**（例如家目錄或 `~/Projects`）執行：
+
+```bash
+git clone https://github.com/gba3124/openclaw-skills.git
+```
+
+可改成自訂資料夾名，例如：`git clone https://github.com/gba3124/openclaw-skills.git ~/openclaw-skills`。
+
+**步驟 3：複製到 OpenClaw 會掃描的 skills 目錄**
+
+OpenClaw 只認：`~/.openclaw/workspace/skills/<技能資料夾名>/SKILL.md`（多一層目錄不會被掃到）。
+
+macOS / Linux / WSL2（Bash）：
+
+```bash
+mkdir -p ~/.openclaw/workspace/skills
+cp -R openclaw-skills/skills/openclaw-course-guide ~/.openclaw/workspace/skills/
+cp -R openclaw-skills/skills/openclaw-linebot-master ~/.openclaw/workspace/skills/
+```
+
+若 clone 時用的是自訂路徑，把第一段的 `openclaw-skills` 改成你的資料夾名稱。
+
+Windows **原生 PowerShell**（未進 WSL、且 OpenClaw 讀的是使用者家目錄下同一路徑時）：
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.openclaw\workspace\skills" | Out-Null
+Copy-Item -Recurse -Force "openclaw-skills\skills\openclaw-course-guide" "$env:USERPROFILE\.openclaw\workspace\skills\"
+Copy-Item -Recurse -Force "openclaw-skills\skills\openclaw-linebot-master" "$env:USERPROFILE\.openclaw\workspace\skills\"
+```
+
+**驗收：**
+
+```bash
+test -f ~/.openclaw/workspace/skills/openclaw-course-guide/SKILL.md && test -f ~/.openclaw/workspace/skills/openclaw-linebot-master/SKILL.md && echo OK
+```
+
+兩個路徑都存在且印出 `OK` = 通過。
+
+> **陪跑提示（歐文口語可講）：** 這步是「把講義 clone 下來放進助理會讀的抽屜」，跟等等要裝的 OpenClaw **主程式**是不同資料夾；先做好，後面問我課程步驟我才對得上 skill。
+
+---
+
 **1-2 Clone OpenClaw 專案**
 
 先問講師是否有提供專案網址。有 → `git clone <那個網址>`。否則：
@@ -219,7 +369,7 @@ claude
 
 ---
 
-**1-4a（macOS，Docker 路線）**
+**1-4a（macOS 1.b｜Docker 包 OpenClaw）**
 
 確認 Docker Desktop 已開（右上角綠色圖示）：
 
@@ -232,7 +382,38 @@ docker compose ps  # openclaw-gateway 狀態要是 Up
 
 ---
 
-**1-4b（Windows，方式 A：WSL2 路線）**
+**1-4b（macOS 1.a｜本機直裝 OpenClaw，非 Docker）**
+
+需已通過 Q2a 風險確認。此路線**不必**先做下方 **1-2**（clone `openclaw` 專案）與 **1-4a**；本機 Gateway 由安裝腳本／`openclaw` CLI 管理即可。
+
+官方推薦一鍵腳本（會處理 Node 需求）：
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+若你堅持自己管 Node，可改用（須 Node 24 建議或 Node 22.16+，詳見[官方安裝頁](https://docs.openclaw.ai/install)）：
+
+```bash
+npm install -g openclaw@latest
+openclaw onboard --install-daemon
+```
+
+驗收：
+
+```bash
+openclaw --version
+openclaw doctor
+openclaw gateway status
+```
+
+> 關卡 2 起請依 **安裝環境差異總覽** 改用本機 `openclaw`，勿照抄 `docker compose run --rm openclaw-cli`。
+
+---
+
+**1-4c（Windows 2.b｜WSL2：OpenClaw 裝在 Ubuntu 內）**
+
+以下為 **Ubuntu 內本機直裝**（與官方 Linux 流程相同）。若你之後改在 WSL 裡用 **Docker 包 OpenClaw**，再補做 **1-2** 與 **1-4a** 類步驟即可。
 
 ```powershell
 # PowerShell：安裝 WSL2 + Ubuntu（若尚未裝）
@@ -244,28 +425,64 @@ wsl --install -d Ubuntu
 ```bash
 sudo apt-get update && sudo apt-get install -y git
 curl -fsSL https://claude.ai/install.sh | bash
-openclaw onboard --install-daemon
-systemctl status  # 確認 systemd 可用
+curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
-驗收：`claude --version` 有版本號 = 通過
+若你跳過腳本裡的引導、改用自己管好的 Node，可改裝：
+
+```bash
+npm install -g openclaw@latest
+openclaw onboard --install-daemon
+```
+
+驗收：`claude --version` 與 `openclaw --version` 皆有版本號；若用 daemon，`systemctl status` 可確認 systemd 是否正常（依你的 WSL 發行版而定）。
+
+> WSL 內路線若後續也用 Docker 包 OpenClaw，則與 macOS 1.b 類似，改在專案目錄用 `docker compose`；若純本機 `openclaw` daemon，關卡 2+ 同樣用 `openclaw` CLI 對照替換。
 
 ---
 
-**1-4b（Windows，方式 B：PowerShell 直裝，需先取得同意）**
+**1-4d（Windows 2.a｜本機 npm 套件裝 OpenClaw）**
+
+在 **PowerShell** 或 **CMD**（非 WSL）。此路線**不必**先做 **1-2**（clone 專案）與 Docker 相關小節。須 **Node 24（建議）或 Node 22.16+**、`npm` 可用；若還沒有 Node，請先安裝 [Node.js LTS](https://nodejs.org/) 或改用 **1-4e** 腳本。
 
 ```powershell
-# 以系統管理員身份開啟 PowerShell
+node -v
+npm -v
+npm install -g openclaw@latest
+openclaw onboard --install-daemon
+```
+
+驗收：
+
+```powershell
+openclaw --version
+openclaw doctor
+openclaw gateway status
+```
+
+裝完必做安全體檢：確認 Gateway 未誤曝到公網（`openclaw doctor` 與官方文件）。
+
+> 關卡 2 起請依 **安裝環境差異總覽** 用本機 `openclaw`，勿照抄 `docker compose run --rm openclaw-cli`。
+
+---
+
+**1-4e（Windows 2.a｜本機 PowerShell 官方安裝腳本）**
+
+在已取得 Q2b 方式 B 同意、且使用者選「官方腳本」時使用。此路線**不必**先做 **1-2**（clone 專案）與 Docker 相關小節。以系統管理員身份開啟 **PowerShell**：
+
+```powershell
 iwr -useb https://openclaw.ai/install.ps1 | iex
 winget install --id Git.Git -e --source winget
 ```
 
-裝完必做安全體檢：
+裝完必做安全體檢（**PowerShell** 或新安裝程式附的終端機皆可）：
 
-```bash
+```powershell
 openclaw doctor
 # 確認 Gateway Port 未直接外露到公網
 ```
+
+> 關卡 2 起請依 **安裝環境差異總覽** 用本機 `openclaw`，勿照抄 `docker compose run --rm openclaw-cli`。
 
 ---
 
@@ -515,7 +732,10 @@ docker compose restart openclaw-gateway
 
 ## 技術事實（避免教錯）
 
+- **學員狀態檔**：與本 `SKILL.md` 同目錄之 **`LEARNER_STATE.md`**（純 Markdown，單一檔案集中記錄勇者代碼、安裝路線、Q3 現況、8 關進度、足跡；觸發即更新）。結構範本見同目錄 **`LEARNER_STATE.example.md`**
+- **安裝環境代號**：**macOS 1.a** 本機直裝、**macOS 1.b** Docker 包裝、**Windows 2.a** 本機（npm 或 PowerShell 腳本）、**Windows 2.b** WSL2 Ubuntu；對照表與關卡 2+ 指令替換規則見 **安裝環境差異總覽**
 - **Skills 路徑**：`~/.openclaw/workspace/skills/<name>/SKILL.md`（多一層目錄不會被掃到）
+- **課程 skills 取得**：公開倉 `https://github.com/gba3124/openclaw-skills.git` → `git clone` 後將 `skills/*` 複製到上列路徑（詳見關卡 1 的 **1-1a**，免 GitHub 登入）
 - **預設模型**：`openrouter/anthropic/claude-sonnet-4.5`
 - **工具權限**必須：`tools.profile=full` 且 `tools.sessions.visibility=all`
 - 只 `git pull` 不會升容器版本，必須 `docker build` + `force-recreate`
