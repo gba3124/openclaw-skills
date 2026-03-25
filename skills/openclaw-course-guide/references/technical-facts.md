@@ -15,6 +15,91 @@
 
 ---
 
+## Token 優化（優先級 + 實際做法）
+
+### 第一優先（先做，風險最低）
+
+先用官方內建三件套：`compaction` + `prompt caching` + `session pruning`。
+
+設定範例（`openclaw.json`）：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "compaction": {
+        "enabled": true
+      },
+      "models": {
+        "openrouter/anthropic/claude-sonnet-4.5": {
+          "params": {
+            "cacheRetention": "long"
+          }
+        }
+      },
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "1h"
+      },
+      "heartbeat": {
+        "every": "55m"
+      }
+    }
+  }
+}
+```
+
+實作原則：
+- `cacheRetention` 與 `contextPruning.ttl` 對齊（`short=5m`、`long=1h`）
+- 先跑 1-2 天再看趨勢，不要當天就頻繁改參數
+- 觀察 `cacheRead/cacheWrite` 是否改善（聊天內 `/usage full`、`/status`）
+
+驗收命令：
+
+```bash
+docker compose restart openclaw-gateway
+docker compose run --rm openclaw-cli status --usage
+```
+
+### 第二優先（插件）
+
+若第一優先做完仍覺得 token/cost 偏高，再上 **Lossless Claw (LCM)**（增量式、DAG 型壓縮）。
+
+```bash
+docker compose run --rm openclaw-cli plugins install @martian-engineering/lossless-claw
+docker compose run --rm openclaw-cli plugins enable lossless-claw
+```
+
+在 `openclaw.json` 啟用 context engine：
+
+```json
+{
+  "plugins": {
+    "slots": {
+      "contextEngine": "lossless-claw"
+    },
+    "entries": {
+      "lossless-claw": {
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+啟用後驗收：
+
+```bash
+docker compose restart openclaw-gateway
+docker compose run --rm openclaw-cli doctor
+docker compose run --rm openclaw-cli plugins inspect lossless-claw
+```
+
+回退方式（品質不穩時）：
+- 把 `plugins.slots.contextEngine` 改回 `"legacy"`，重啟 gateway。
+
+---
+
 ## 進階功能（完成 8 關後再看）
 
 詳見 `openclaw-linebot-master` skill：

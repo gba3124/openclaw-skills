@@ -102,19 +102,87 @@ docker run -it --rm --network host cloudflare/cloudflared:latest \
 
 ### 關卡 6：完成 Token 怪獸瘦身優化
 
-把環境變數寫入 `.env` 檔（防止重開電腦後失效）：
+先做官方內建，再上插件。順序不要反過來。
 
 ```bash
-# 在專案根目錄（和 docker-compose.yml 同層）
-echo "OPENROUTER_API_KEY=你的Key" >> .env
-echo "LINE_CHANNEL_ACCESS_TOKEN=你的Token" >> .env
-echo "LINE_CHANNEL_SECRET=你的Secret" >> .env
-
-# 確保 .env 在 .gitignore 裡（Token 不能推上 git）
-grep '.env' .gitignore || echo '.env' >> .gitignore
+# 先重啟，確保前面關卡的模型與工具設定已生效
+docker compose restart openclaw-gateway
 ```
 
-驗收：`cat .env` 有三行設定值，且 `.gitignore` 包含 `.env`
+#### 第一優先（先做，風險最低）：內建 compaction + prompt caching + session pruning
+
+在 `openclaw.json`（Compose 常見路徑：`~/.openclaw/openclaw.json`）加入：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "compaction": {
+        "enabled": true
+      },
+      "models": {
+        "openrouter/anthropic/claude-sonnet-4.5": {
+          "params": {
+            "cacheRetention": "long"
+          }
+        }
+      },
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "1h"
+      },
+      "heartbeat": {
+        "every": "55m"
+      }
+    }
+  }
+}
+```
+
+套用與驗收：
+
+```bash
+docker compose restart openclaw-gateway
+docker compose run --rm openclaw-cli status --usage
+# 聊天中可用 /status、/usage full 觀察 compaction 次數與 cacheRead/cacheWrite
+```
+
+#### 第二優先（插件）：Lossless Claw（LCM）
+
+第一優先跑穩（建議 1-2 天）後，若 token/cost 仍高，再導入 LCM。
+
+```bash
+docker compose run --rm openclaw-cli plugins install @martian-engineering/lossless-claw
+docker compose run --rm openclaw-cli plugins enable lossless-claw
+```
+
+在 `openclaw.json` 設定 context engine：
+
+```json
+{
+  "plugins": {
+    "slots": {
+      "contextEngine": "lossless-claw"
+    },
+    "entries": {
+      "lossless-claw": {
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+套用與驗收：
+
+```bash
+docker compose restart openclaw-gateway
+docker compose run --rm openclaw-cli doctor
+docker compose run --rm openclaw-cli plugins inspect lossless-claw
+```
+
+回退（若品質異常）：
+- 把 `plugins.slots.contextEngine` 改回 `"legacy"`，再重啟 gateway。
 
 ---
 
